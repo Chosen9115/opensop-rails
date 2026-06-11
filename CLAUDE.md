@@ -78,7 +78,7 @@ Don't leave work uncommitted on a worktree branch.
 - Every process has: `name`, `version`, `description`, `inputs`, `outputs`, `steps`
 - Steps reference upstream outputs via `from:` syntax
 - Conditions use simple boolean expressions
-- See [`SPEC.md`](./SPEC.md) §2 for the full grammar
+- See [`SPEC.md §2`](https://github.com/Chosen9115/opensop/blob/main/SPEC.md) for the full grammar (spec lives in the opensop repo)
 
 ### Step types
 

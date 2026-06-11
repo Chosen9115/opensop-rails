@@ -127,7 +127,7 @@ For an existing deployment:
 
 ## [0.1.0] — 2026-04-18
 
-First MVP release per [`SPEC.md`](./SPEC.md) §8. Defines, executes, and exposes business processes as APIs.
+First MVP release per [`SPEC.md §8`](https://github.com/Chosen9115/opensop/blob/main/SPEC.md). Defines, executes, and exposes business processes as APIs.
 
 ### Added — engine
 
@@ -136,7 +136,7 @@ First MVP release per [`SPEC.md`](./SPEC.md) §8. Defines, executes, and exposes
 - **Instance executor** — `start`, `advance!`, `submit_step`, `cancel!`. Single-transaction state changes. Two-pass output resolution honoring `required_if:`.
 - **Input resolver** — handles `process.inputs.<x>`, `steps.<id>.outputs.<x>`, `env.<X>`, `instance.<field>` references.
 - **Condition evaluator** — recursive-descent parser for `condition:` and `required_if:` expressions. No `eval`. Supports `== != > >= < <= && || !` and parens.
-- **Step executors** — `automated` (real, runs scripts via stdin/stdout JSON per [SPEC §6.3](./SPEC.md#63-step-execution-model)), `form` (real), `notification` (stub returning immediately), `webhook` (creates inbound callback, no outbound yet), `judgment` / `approval` / `subprocess` / `wait` (pause-and-wait stubs).
+- **Step executors** — `automated` (real, runs scripts via stdin/stdout JSON per [SPEC §6.3](https://github.com/Chosen9115/opensop/blob/main/SPEC.md#63-step-execution-model)), `form` (real), `notification` (stub returning immediately), `webhook` (creates inbound callback, no outbound yet), `judgment` / `approval` / `subprocess` / `wait` (pause-and-wait stubs).
 - **Five-table store** — `sop_processes`, `sop_instances`, `sop_steps`, `sop_events`, `sop_callbacks`. UUID PKs, JSONB columns, GIN index on tags.
 
 ### Added — API
@@ -180,12 +180,12 @@ First MVP release per [`SPEC.md`](./SPEC.md) §8. Defines, executes, and exposes
 
 ### Added — documentation
 
-- [`HANDOFF.md`](./HANDOFF.md) — where everything lives, what's next.
+- `HANDOFF.md` — where everything lives, what's next. (superseded by [`docs/architecture.md`](./docs/architecture.md))
 - [`docs/architecture.md`](./docs/architecture.md) — how the engine runs an instance.
 - [`docs/process-authoring.md`](./docs/process-authoring.md) — how to write a `.sop.yaml`.
 - [`README.md`](./README.md) — quick-start.
 
-### Not yet built (deferred to v0.2 / v0.3 per [SPEC §8](./SPEC.md#8-what-to-build-first))
+### Not yet built (deferred to v0.2 / v0.3 per [SPEC §8](https://github.com/Chosen9115/opensop/blob/main/SPEC.md#8-what-to-build-first))
 
 - Process Designer UI
 - LLM-backed judgment router

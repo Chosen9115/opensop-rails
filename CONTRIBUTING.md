@@ -55,7 +55,7 @@ Allowlist entries for known-safe placeholders (test fixtures, doc examples) live
 2. **Branch from `main`**: `git checkout -b fix/short-description`.
 3. **Make the change** with tests. New step types, field types, or API endpoints need spec coverage; see `spec/services/opensop/` and `spec/requests/sop/`.
 4. **Run the full suite**: `bin/rspec` (all green). Run `bin/rubocop` if you've touched service code.
-5. **Open a PR** against `Chosen9115/opensop:main`. The PR description should answer: what's the problem, how does this solve it, what did I test.
+5. **Open a PR** against `Chosen9115/opensop-rails:main`. The PR description should answer: what's the problem, how does this solve it, what did I test.
 
 ### Standards worth knowing
 
@@ -65,7 +65,7 @@ Allowlist entries for known-safe placeholders (test fixtures, doc examples) live
 - **Sop:: namespace for models, Opensop:: for services.** The split is intentional (avoids collision with Ruby's top-level `::Process`).
 - **Process definitions are the source of truth.** The DB caches them. `Opensop::Registry.load_all` re-syncs from disk.
 
-See `HANDOFF.md` for the full architecture tour and where to make specific kinds of changes.
+See [`docs/architecture.md`](./docs/architecture.md) for the full architecture tour and where to make specific kinds of changes.
 
 ---
 
@@ -89,7 +89,7 @@ Public example processes live in `processes/examples/`. They should be:
 Many teams will run OpenSOP with their own private processes. The recommended topology:
 
 ```
-Chosen9115/opensop          ← public, engine + example processes (this repo)
+Chosen9115/opensop-rails    ← public, reference server + example processes (this repo)
 your-org/opensop-private    ← your private fork, tracks engine changes + hosts your processes
 ```
 
@@ -102,12 +102,12 @@ In your local clone:
 git remote rename origin private
 
 # Add the upstream public repo
-git remote add public https://github.com/Chosen9115/opensop.git
+git remote add public https://github.com/Chosen9115/opensop-rails.git
 
 # Verify
 git remote -v
 # private  https://github.com/your-org/opensop-private.git
-# public   https://github.com/Chosen9115/opensop.git
+# public   https://github.com/Chosen9115/opensop-rails.git
 ```
 
 Add a `processes/<your-org>/` directory for your private processes and gitignore it **in the public repo** (it's already gitignored upstream — check `.gitignore`). In your private fork, remove that ignore line so your processes get tracked.
@@ -120,7 +120,7 @@ Workflow:
 
 1. Branch from `main` in your local clone.
 2. Make the engine change + tests.
-3. Push to **public** and open a PR against `Chosen9115/opensop`:
+3. Push to **public** and open a PR against `Chosen9115/opensop-rails`:
    ```bash
    git push public fix/my-branch
    ```
@@ -159,7 +159,7 @@ If you've been doing engine work correctly (upstream-first), this is a fast-forw
 
 ## Reporting issues
 
-- **Bugs:** open an issue on `Chosen9115/opensop` with repro steps and what you expected to happen.
+- **Bugs:** open an issue on `Chosen9115/opensop-rails` with repro steps and what you expected to happen.
 - **Security:** please don't open public issues for security reports. See [`SECURITY.md`](SECURITY.md) for the disclosure policy and reporting channels.
 - **Spec proposals:** for changes to the `0.1` format, open a discussion first — the YAML format is a contract.
 
