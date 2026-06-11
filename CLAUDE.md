@@ -2,7 +2,7 @@
 
 **Stack:** Rails 8.1.3 / Ruby 3.3.7 / RSpec / Hotwire (Turbo + Stimulus) / importmap / Tailwind / PostgreSQL / Solid Queue / Solid Cache
 
-OpenSOP is an open standard and runtime for defining business processes (SOPs) as APIs. Define a process in YAML, get a REST API automatically. Humans and agents drive the same endpoints. Full spec at [`SPEC.md`](./SPEC.md).
+This is **opensop-rails**, the reference server implementing the **[OpenSOP specification](https://github.com/Chosen9115/opensop)**. It serves the `/sop/*` REST API, executes processes, and owns a shared audit log. The spec and the local-first CLI live in [`Chosen9115/opensop`](https://github.com/Chosen9115/opensop) — the `/sop/*` contract is owned by its [`SPEC.md`](https://github.com/Chosen9115/opensop/blob/main/SPEC.md) and this server must stay compatible. OpenSOP is local-first: the CLI runs processes without this server. Run opensop-rails for shared orchestration, a monitoring UI, a team audit log, or the hosted REST API. (SPEC §-references below now live in the spec repo.)
 
 ---
 
