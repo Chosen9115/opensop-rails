@@ -46,7 +46,7 @@ The implementation lives in `app/services/opensop/step_executors/automated.rb#re
 
 The public repo's `.gitignore` reserves the names `/processes/coba/` and `/processes/private/`, so:
 
-- **In the public repo (`Chosen9115/opensop`)**: those directories are invisible. Nothing to see here.
+- **In the public repo (`Chosen9115/opensop-rails`)**: those directories are invisible. Nothing to see here.
 - **In a private downstream fork**: add your process files under the reserved name and they'll track in your fork but never leak upstream on a merge-down. If you need a different name, add the entry to your fork's `.gitignore` (and remember to remove the ignore in the fork itself so the files track there).
 
 See `CONTRIBUTING.md` for the full upstream-first sync workflow.

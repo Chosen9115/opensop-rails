@@ -1,6 +1,6 @@
-# OpenSOP — Architecture
+# opensop-rails — Reference Server Architecture
 
-How an OpenSOP instance gets from `start` to `completed`. Read this after [`SPEC.md`](../SPEC.md) §3 for the high-level picture; this doc covers the actual call flow inside the Rails app.
+How an OpenSOP instance gets from `start` to `completed` inside this Rails server. Read this after [SPEC.md §3](https://github.com/Chosen9115/opensop/blob/main/SPEC.md) for the high-level spec picture; this doc covers the actual call flow inside the reference server.
 
 ---
 
@@ -199,7 +199,7 @@ It does **not** support method calls, interpolation, backticks, or anything rese
 
 ## Step execution protocol (automated steps)
 
-From [SPEC §6.3](../SPEC.md#63-step-execution-model). `Opensop::StepExecutors::Automated`:
+From [SPEC §6.3](https://github.com/Chosen9115/opensop/blob/main/SPEC.md#63-step-execution-model). `Opensop::StepExecutors::Automated`:
 
 ```
 ENGINE                                   SCRIPT

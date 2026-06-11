@@ -1,6 +1,6 @@
 # Security Policy
 
-OpenSOP is an open standard and runtime that exposes business processes as APIs. Processes run automated scripts, evaluate conditions, and call external systems — so security bugs in the engine can have real blast radius. We take vulnerability reports seriously.
+opensop-rails is the reference server that executes OpenSOP processes, serves the `/sop/*` REST API, and owns the audit log. Processes run automated scripts, evaluate conditions, and call external systems — so security bugs in the engine can have real blast radius. We take vulnerability reports seriously.
 
 ## Reporting a vulnerability
 
@@ -8,7 +8,7 @@ OpenSOP is an open standard and runtime that exposes business processes as APIs.
 
 Use one of these channels, in order of preference:
 
-1. **GitHub Security Advisory** (preferred) — go to the [Security tab](https://github.com/Chosen9115/opensop/security/advisories/new) and click "Report a vulnerability." This keeps the report private and gives us an audit trail.
+1. **GitHub Security Advisory** (preferred) — go to the [Security tab](https://github.com/Chosen9115/opensop-rails/security/advisories/new) and click "Report a vulnerability." This keeps the report private and gives us an audit trail.
 2. **Email** — `abkuri88@gmail.com` with subject prefix `[OpenSOP security]`. PGP key available on request.
 
 A good report includes:
