@@ -13,12 +13,17 @@ RSpec.describe Opensop::ProcessStatusRollup do
     context "with a single open process (no instances, no schedule)" do
       let!(:process) { create(:sop_process, name: "invoice-review", version: "1.0") }
 
-      it "returns one entry with status=open" do
+      it "returns one entry with state=open" do
         expect(result.processes.size).to eq(1)
         ps = result.processes.first
         expect(ps.name).to eq("invoice-review")
         expect(ps.version).to eq("1.0")
-        expect(ps.status).to eq("open")
+        expect(ps.state).to eq("open")
+      end
+
+      it "exposes the full SPEC v0.7 §9.4 field set" do
+        ps = result.processes.first
+        expect(ps.members).to include(:name, :version, :state, :last_status, :last_run_at, :next_run_at, :active_instances)
       end
 
       it "returns last_status=never when no instances have completed" do
@@ -48,9 +53,9 @@ RSpec.describe Opensop::ProcessStatusRollup do
                next_run_at: 2.hours.from_now)
       end
 
-      it "returns status=scheduled" do
+      it "returns state=scheduled" do
         ps = result.processes.first
-        expect(ps.status).to eq("scheduled")
+        expect(ps.state).to eq("scheduled")
       end
 
       it "returns the schedule's next_run_at" do
@@ -79,9 +84,9 @@ RSpec.describe Opensop::ProcessStatusRollup do
                next_run_at: 30.days.from_now)
       end
 
-      it "returns status=open (disabled schedule does not promote to scheduled)" do
+      it "returns state=open (disabled schedule does not promote to scheduled)" do
         ps = result.processes.first
-        expect(ps.status).to eq("open")
+        expect(ps.state).to eq("open")
       end
 
       it "marks schedule_enabled=false" do
@@ -107,9 +112,9 @@ RSpec.describe Opensop::ProcessStatusRollup do
         create(:sop_instance, :running, process: process, process_name: "onboarding", process_version: "1.0")
       end
 
-      it "returns status=running" do
+      it "returns state=running" do
         ps = result.processes.first
-        expect(ps.status).to eq("running")
+        expect(ps.state).to eq("running")
       end
 
       it "returns active_instances=1" do
@@ -131,9 +136,9 @@ RSpec.describe Opensop::ProcessStatusRollup do
         create(:sop_instance, :running, process: process, process_name: "sync", process_version: "1.0")
       end
 
-      it "returns status=running (running takes precedence over scheduled)" do
+      it "returns state=running (running takes precedence over scheduled)" do
         ps = result.processes.first
-        expect(ps.status).to eq("running")
+        expect(ps.state).to eq("running")
       end
     end
 
@@ -192,12 +197,12 @@ RSpec.describe Opensop::ProcessStatusRollup do
         expect(names).to eq(%w[alpha beta])
       end
 
-      it "correctly identifies each process status" do
+      it "correctly identifies each process state" do
         alpha_ps = result.processes.find { |p| p.name == "alpha" }
         beta_ps  = result.processes.find { |p| p.name == "beta" }
 
-        expect(alpha_ps.status).to eq("open")
-        expect(beta_ps.status).to eq("scheduled")
+        expect(alpha_ps.state).to eq("open")
+        expect(beta_ps.state).to eq("scheduled")
       end
     end
 
@@ -223,7 +228,7 @@ RSpec.describe Opensop::ProcessStatusRollup do
       it "still returns the process with safe defaults" do
         ps = result.processes.first
         expect(ps.name).to eq("resilience-check")
-        expect(ps.status).to eq("open")
+        expect(ps.state).to eq("open")
         expect(ps.active_instances).to eq(0)
         expect(ps.last_status).to eq("never")
       end

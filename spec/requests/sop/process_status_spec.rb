@@ -40,11 +40,14 @@ RSpec.describe "Sop::ProcessStatus", type: :request do
         entry = json[:processes].first
         expect(entry[:name]).to eq("invoice-review")
         expect(entry[:version]).to eq("1.0")
-        expect(entry[:status]).to eq("open")
+        expect(entry[:state]).to eq("open")
         expect(entry[:last_status]).to eq("never")
         expect(entry[:last_run_at]).to be_nil
         expect(entry[:next_run_at]).to be_nil
         expect(entry[:active_instances]).to eq(0)
+        # SPEC v0.7 §9.4: assert the canonical key set is present and `status` is absent
+        expect(entry.keys).to include(:name, :version, :state, :last_status, :last_run_at, :next_run_at, :active_instances)
+        expect(entry).not_to have_key(:status)
       end
     end
 
@@ -58,11 +61,11 @@ RSpec.describe "Sop::ProcessStatus", type: :request do
                next_run_at: 2.hours.from_now)
       end
 
-      it "returns status=scheduled and a next_run_at timestamp" do
+      it "returns state=scheduled and a next_run_at timestamp" do
         get "/sop/processes/status"
 
         entry = json[:processes].first
-        expect(entry[:status]).to eq("scheduled")
+        expect(entry[:state]).to eq("scheduled")
         expect(entry[:next_run_at]).to be_present
         # ISO-8601 string expected
         expect { Time.iso8601(entry[:next_run_at]) }.not_to raise_error
@@ -79,11 +82,11 @@ RSpec.describe "Sop::ProcessStatus", type: :request do
                process: process, process_name: "onboarding", process_version: "1.0")
       end
 
-      it "returns status=running and active_instances=2" do
+      it "returns state=running and active_instances=2" do
         get "/sop/processes/status"
 
         entry = json[:processes].first
-        expect(entry[:status]).to eq("running")
+        expect(entry[:state]).to eq("running")
         expect(entry[:active_instances]).to eq(2)
       end
     end

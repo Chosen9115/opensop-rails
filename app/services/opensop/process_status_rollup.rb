@@ -2,16 +2,16 @@
 
 module Opensop
   # Builds the per-process status rollup consumed by:
-  #   GET /sop/processes/status   — JSON API (S0a status model)
+  #   GET /sop/processes/status   — JSON API (SPEC v0.7 §9.4)
   #
-  # Status model (SPEC v0.7 S0a):
-  #   status    ∈ { "open", "scheduled", "running" }
+  # Entry shape (SPEC v0.7 §9.4):
+  #   state       ∈ { "open", "scheduled", "running" }
   #   last_status ∈ { "ok", "error", "never" }
   #   last_run_at  ISO-8601 or null
-  #   next_run_at  ISO-8601 or null (only for scheduled)
+  #   next_run_at  ISO-8601 or null (only for state="scheduled")
   #   active_instances  integer count of pending/running instances
   #
-  # Status derivation rules:
+  # State derivation rules:
   #   running   — at least one instance in pending/running state
   #   scheduled — has an enabled Sop::Schedule row (regardless of active instances)
   #   open      — neither of the above
@@ -26,10 +26,10 @@ module Opensop
       :name,
       :version,
       :description,
-      :status,          # "open" | "scheduled" | "running"
+      :state,           # "open" | "scheduled" | "running"
       :last_status,     # "ok" | "error" | "never"
       :last_run_at,     # Time or nil
-      :next_run_at,     # Time or nil (non-null only when status="scheduled")
+      :next_run_at,     # Time or nil (non-null only when state="scheduled")
       :active_instances,
       :cron_expression,
       :schedule_enabled,
@@ -55,14 +55,14 @@ module Opensop
         in_flight = in_flight_by_process[process.name].to_i
         last_instance = last_instance_by_process[process.name]
 
-        status = derive_status(in_flight, schedule)
+        state = derive_status(in_flight, schedule)
         last_status = derive_last_status(last_instance)
 
         ProcessStatus.new(
           name: process.name,
           version: process.version,
           description: process.description,
-          status: status,
+          state: state,
           last_status: last_status,
           last_run_at: last_instance&.dig(:completed_at) || last_instance&.dig(:updated_at),
           next_run_at: schedule&.enabled? ? schedule.next_run_at : nil,
