@@ -3,7 +3,6 @@
 module Opensop
   # Builds the per-process status rollup consumed by:
   #   GET /sop/processes/status   — JSON API (S0a status model)
-  #   GET /observability          — UI terminal view
   #
   # Status model (SPEC v0.7 S0a):
   #   status    ∈ { "open", "scheduled", "running" }
@@ -34,8 +33,8 @@ module Opensop
       :active_instances,
       :cron_expression,
       :schedule_enabled,
-      :schedule_id,     # UUID of the schedule row, or nil — used by the UI to
-                        # address the toggle action unambiguously
+      :schedule_id,     # UUID of the schedule row, or nil — included in API
+                        # response for consumers that need to address a schedule
       keyword_init: true
     )
 

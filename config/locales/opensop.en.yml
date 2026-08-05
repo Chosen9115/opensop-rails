@@ -121,46 +121,6 @@ en:
         title: "Authentication disabled"
         message: "Login is bypassed via OPENSOP_DISABLE_AUTH. Anyone who can reach this server has full admin access. Do not use on a public deployment."
 
-    observability:
-      title: "Observability"
-      subtitle: "Live status for every registered process — open, scheduled, or running."
-      refresh_hint: "Refreshes every %{seconds}s"
-      schedule_enabled: "Schedule enabled."
-      schedule_disabled: "Schedule disabled."
-      schedule_not_found: "No schedule found for that process."
-      unavailable:
-        title: "Observability unavailable"
-        body: "One or more underlying tables have not been migrated yet."
-      empty:
-        title: "No processes registered"
-        body: "Drop a .sop.yaml file in /processes and run bin/rails opensop:load_processes."
-      tiles:
-        running: "Running now"
-        scheduled: "Scheduled"
-        open: "Open"
-        errors_24h: "Errors (24h)"
-      table:
-        process: "Process"
-        schedule: "Schedule"
-        last_run: "Last run"
-        next_run: "Next run"
-        last_status: "Last"
-        status: "Status"
-        active: "Active"
-        actions: "Actions"
-      status:
-        running: "running"
-        scheduled: "scheduled"
-        open: "open"
-      last_status:
-        ok: "ok"
-        error: "error"
-        never: "never"
-      actions:
-        run_now: "Run now"
-        enable: "Enable"
-        disable: "Disable"
-
     nav:
       dashboard: "Dashboard"
       processes: "Processes"
@@ -168,7 +128,6 @@ en:
       metrics: "Metrics"
       new_process: "+ New Process"
       schedule: "Schedule"
-      observability: "Observability"
       agents: "Agents"
       costs: "Costs"
       templates: "Templates"
