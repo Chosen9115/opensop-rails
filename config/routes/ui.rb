@@ -86,6 +86,13 @@ scope module: :ui, as: :ui do
   # Tier 3 — Schedule (cron-driven recurring instances).
   get "/schedule", to: "schedules#index", as: :schedule
 
+  # Observability terminal — per-process status, run-now, schedule toggles.
+  get  "/observability",                    to: "observability#index",           as: :observability
+  post "/observability/:name/run",          to: "observability#run_now",         as: :observability_run_now,
+       constraints: { name: /[a-z0-9][a-z0-9_-]*/ }
+  patch "/observability/:name/schedule/toggle", to: "observability#toggle_schedule", as: :observability_toggle_schedule,
+        constraints: { name: /[a-z0-9][a-z0-9_-]*/ }
+
   # Account / admin self-service. Three sibling pages: passkeys, users
   # (admins), and active sessions. All gated by the existing
   # Ui::ApplicationController auth chain.

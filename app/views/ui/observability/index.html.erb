@@ -1,0 +1,204 @@
+<%
+  # Map SPEC v0.7 process status to PillComponent states.
+  status_pill_state_for = ->(status) {
+    case status
+    when "running"   then :running
+    when "scheduled" then :info
+    when "open"      then :neutral
+    else                  :neutral
+    end
+  }
+
+  status_pill_label_for = ->(status) {
+    case status
+    when "running"   then t('opensop.observability.status.running')
+    when "scheduled" then t('opensop.observability.status.scheduled')
+    when "open"      then t('opensop.observability.status.open')
+    else                  t('opensop.common.unknown')
+    end
+  }
+
+  last_status_pill_state_for = ->(last_status) {
+    case last_status
+    when "ok"    then :ok
+    when "error" then :err
+    when "never" then :neutral
+    else              :neutral
+    end
+  }
+
+  last_status_pill_label_for = ->(last_status) {
+    case last_status
+    when "ok"    then t('opensop.observability.last_status.ok')
+    when "error" then t('opensop.observability.last_status.error')
+    when "never" then t('opensop.observability.last_status.never')
+    else              t('opensop.common.unknown')
+    end
+  }
+%>
+
+<meta http-equiv="refresh" content="<%= @refresh_seconds %>">
+
+<section class="mb-6 flex items-start justify-between">
+  <div>
+    <h1 class="text-[20px] font-semibold tracking-tight text-fg">
+      <%= t('opensop.observability.title') %>
+    </h1>
+    <p class="mt-1 text-sm text-fg-muted">
+      <%= t('opensop.observability.subtitle') %>
+    </p>
+  </div>
+  <span class="text-[11px] font-mono text-fg-muted mt-1">
+    <%= t('opensop.observability.refresh_hint', seconds: @refresh_seconds) %>
+  </span>
+</section>
+
+<% if @table_unavailable %>
+  <%= render EmptyStateComponent.new(
+        title: t('opensop.observability.unavailable.title'),
+        description: t('opensop.observability.unavailable.body')
+      ) %>
+<% else %>
+  <%# Hero tiles %>
+  <section class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+    <div class="rounded-[3px] border border-border bg-bg p-4">
+      <div class="text-xs uppercase tracking-wide text-fg-muted">
+        <%= t('opensop.observability.tiles.running') %>
+      </div>
+      <div class="mt-2 text-[28px] font-mono tabular-nums text-fg leading-none">
+        <%= number_with_delimiter(@totals[:running]) %>
+      </div>
+    </div>
+    <div class="rounded-[3px] border border-border bg-bg p-4">
+      <div class="text-xs uppercase tracking-wide text-fg-muted">
+        <%= t('opensop.observability.tiles.scheduled') %>
+      </div>
+      <div class="mt-2 text-[28px] font-mono tabular-nums text-fg leading-none">
+        <%= number_with_delimiter(@totals[:scheduled]) %>
+      </div>
+    </div>
+    <div class="rounded-[3px] border border-border bg-bg p-4">
+      <div class="text-xs uppercase tracking-wide text-fg-muted">
+        <%= t('opensop.observability.tiles.open') %>
+      </div>
+      <div class="mt-2 text-[28px] font-mono tabular-nums text-fg leading-none">
+        <%= number_with_delimiter(@totals[:open]) %>
+      </div>
+    </div>
+    <div class="rounded-[3px] border border-border bg-bg p-4">
+      <div class="text-xs uppercase tracking-wide text-fg-muted">
+        <%= t('opensop.observability.tiles.errors_24h') %>
+      </div>
+      <div class="mt-2 text-[28px] font-mono tabular-nums text-fg leading-none">
+        <%= number_with_delimiter(@totals[:errors_24h]) %>
+      </div>
+    </div>
+  </section>
+
+  <% if @process_statuses.empty? %>
+    <%= render EmptyStateComponent.new(
+          title: t('opensop.observability.empty.title'),
+          description: t('opensop.observability.empty.body')
+        ) %>
+  <% else %>
+    <section>
+      <%# Column layout: Process | Schedule | Last run | Next run | Last status | Status | Active | Actions %>
+      <div class="border border-border rounded-[3px] divide-y divide-border bg-bg overflow-hidden">
+        <div class="grid grid-cols-[1.5fr_1fr_120px_120px_90px_90px_60px_130px] gap-3 px-4 py-2 text-[10px] font-mono uppercase tracking-[0.08em] text-fg-muted bg-bg-sunken">
+          <span><%= t('opensop.observability.table.process') %></span>
+          <span><%= t('opensop.observability.table.schedule') %></span>
+          <span><%= t('opensop.observability.table.last_run') %></span>
+          <span><%= t('opensop.observability.table.next_run') %></span>
+          <span><%= t('opensop.observability.table.last_status') %></span>
+          <span><%= t('opensop.observability.table.status') %></span>
+          <span class="text-right"><%= t('opensop.observability.table.active') %></span>
+          <span><%= t('opensop.observability.table.actions') %></span>
+        </div>
+
+        <% @process_statuses.each do |ps| %>
+          <div class="grid grid-cols-[1.5fr_1fr_120px_120px_90px_90px_60px_130px] gap-3 items-center px-4 py-3 hover:bg-bg-hover transition-colors text-[12px]">
+
+            <%# Process name + version %>
+            <div class="min-w-0">
+              <%= link_to ui_process_path(name: ps.name),
+                          class: "text-fg font-medium truncate hover:underline block",
+                          title: ps.name do %>
+                <%= ps.name %>
+              <% end %>
+              <span class="text-[11px] text-fg-muted font-mono">v<%= ps.version %></span>
+            </div>
+
+            <%# Schedule expression + timezone indicator %>
+            <div class="min-w-0 font-mono text-fg-muted truncate">
+              <% if ps.cron_expression.present? %>
+                <span title="<%= ps.cron_expression %>"><%= ps.cron_expression %></span>
+                <% unless ps.schedule_enabled %>
+                  <span class="ml-1 text-[10px] text-neutral">(off)</span>
+                <% end %>
+              <% else %>
+                <span class="text-fg-muted">—</span>
+              <% end %>
+            </div>
+
+            <%# Last run %>
+            <span class="font-mono tabular-nums text-fg-muted">
+              <%= render TimestampComponent.new(time: ps.last_run_at) %>
+            </span>
+
+            <%# Next run %>
+            <span class="font-mono tabular-nums text-fg-muted">
+              <% if ps.next_run_at.present? %>
+                <%= render TimestampComponent.new(time: ps.next_run_at, suffix: :in) %>
+              <% else %>
+                <span>—</span>
+              <% end %>
+            </span>
+
+            <%# Last status pill %>
+            <span>
+              <%= render PillComponent.new(
+                    state: last_status_pill_state_for.call(ps.last_status),
+                    label: last_status_pill_label_for.call(ps.last_status)
+                  ) %>
+            </span>
+
+            <%# Status pill (open / scheduled / running) %>
+            <span>
+              <%= render PillComponent.new(
+                    state: status_pill_state_for.call(ps.status),
+                    label: status_pill_label_for.call(ps.status)
+                  ) %>
+            </span>
+
+            <%# Active instances count %>
+            <span class="text-right font-mono tabular-nums text-fg">
+              <% if ps.active_instances > 0 %>
+                <span class="text-info"><%= ps.active_instances %></span>
+              <% else %>
+                <span class="text-fg-muted">0</span>
+              <% end %>
+            </span>
+
+            <%# Action buttons: Run now + Schedule toggle %>
+            <div class="flex items-center gap-2">
+              <%# Run now — always available %>
+              <%= button_to t('opensop.observability.actions.run_now'),
+                            ui_observability_run_now_path(name: ps.name),
+                            method: :post,
+                            class: "text-[11px] font-mono px-2 py-1 rounded-[3px] border border-border bg-bg hover:bg-bg-hover transition-colors text-fg",
+                            data: { confirm: t('opensop.common.confirm') } %>
+
+              <%# Schedule toggle — only when a schedule exists %>
+              <% if ps.cron_expression.present? %>
+                <%= button_to ps.schedule_enabled ? t('opensop.observability.actions.disable') : t('opensop.observability.actions.enable'),
+                              ui_observability_toggle_schedule_path(name: ps.name),
+                              method: :patch,
+                              class: "text-[11px] font-mono px-2 py-1 rounded-[3px] border border-border bg-bg hover:bg-bg-hover transition-colors text-fg-muted" %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+<% end %>
