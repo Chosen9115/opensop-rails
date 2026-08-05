@@ -192,7 +192,7 @@ RSpec.describe "Ui::Observability", type: :request do
     end
   end
 
-  describe "PATCH /observability/:name/schedule/toggle" do
+  describe "PATCH /observability/:name/schedule/:schedule_id/toggle" do
     let!(:process) { create(:sop_process, name: "daily-report", version: "1.0") }
     let!(:schedule) do
       create(:sop_schedule,
@@ -204,7 +204,7 @@ RSpec.describe "Ui::Observability", type: :request do
 
     it "disables an enabled schedule and redirects to observability" do
       expect {
-        patch "/observability/daily-report/schedule/toggle"
+        patch "/observability/daily-report/schedule/#{schedule.id}/toggle"
       }.to change { schedule.reload.enabled? }.from(true).to(false)
 
       expect(response).to have_http_status(:found)
@@ -215,15 +215,78 @@ RSpec.describe "Ui::Observability", type: :request do
       schedule.update!(enabled: false)
 
       expect {
-        patch "/observability/daily-report/schedule/toggle"
+        patch "/observability/daily-report/schedule/#{schedule.id}/toggle"
       }.to change { schedule.reload.enabled? }.from(false).to(true)
     end
 
     it "redirects back with an error message when no schedule exists" do
-      patch "/observability/no-schedule/schedule/toggle"
+      bogus_id = SecureRandom.uuid
+      patch "/observability/no-schedule/schedule/#{bogus_id}/toggle"
 
       expect(response).to have_http_status(:found)
       expect(response.location).to include("/observability")
+    end
+
+    context "with a dotted process name (fix #2 regression guard)" do
+      let!(:dotted_process) { create(:sop_process, name: "finance.invoice", version: "1.0") }
+      let!(:dotted_schedule) do
+        create(:sop_schedule,
+               process_name: "finance.invoice",
+               cron_expression: "0 6 * * *",
+               enabled: true,
+               next_run_at: 1.hour.from_now)
+      end
+
+      it "routes and toggles a dotted process name" do
+        expect {
+          patch "/observability/finance.invoice/schedule/#{dotted_schedule.id}/toggle"
+        }.to change { dotted_schedule.reload.enabled? }.from(true).to(false)
+
+        expect(response).to have_http_status(:found)
+        expect(response.location).to include("/observability")
+      end
+
+      it "run-now route accepts a dotted process name" do
+        post "/observability/finance.invoice/run"
+
+        # The process has no inputs required, so it should start and redirect to
+        # the new instance page (or back to observability if the process isn't
+        # fully configured) — either way, not a 404.
+        expect(response).not_to have_http_status(:not_found)
+      end
+    end
+
+    context "with multiple schedules on one process (fix #4 — toggle targets the right one)" do
+      let!(:schedule_a) do
+        create(:sop_schedule,
+               process_name: "daily-report",
+               cron_expression: "0 8 * * *",
+               enabled: true,
+               next_run_at: 2.hours.from_now)
+      end
+      let!(:schedule_b) do
+        create(:sop_schedule,
+               process_name: "daily-report",
+               cron_expression: "0 20 * * *",
+               enabled: true,
+               next_run_at: 3.hours.from_now)
+      end
+
+      it "toggles only the targeted schedule, leaving the other untouched" do
+        patch "/observability/daily-report/schedule/#{schedule_a.id}/toggle"
+
+        expect(schedule_a.reload.enabled?).to be false
+        expect(schedule_b.reload.enabled?).to be true
+      end
+
+      it "can independently toggle the second schedule without touching the first" do
+        schedule_a.update!(enabled: false)
+
+        patch "/observability/daily-report/schedule/#{schedule_b.id}/toggle"
+
+        expect(schedule_b.reload.enabled?).to be false
+        expect(schedule_a.reload.enabled?).to be false # was already false — untouched
+      end
     end
   end
 end

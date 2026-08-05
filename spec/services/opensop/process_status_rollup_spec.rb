@@ -88,6 +88,16 @@ RSpec.describe Opensop::ProcessStatusRollup do
         ps = result.processes.first
         expect(ps.schedule_enabled).to be false
       end
+
+      it "returns next_run_at=nil for a disabled schedule (SPEC v0.7 §9: next_run_at is non-null only for status=scheduled)" do
+        ps = result.processes.first
+        expect(ps.next_run_at).to be_nil
+      end
+
+      it "exposes the schedule_id so the UI can address the toggle unambiguously" do
+        ps = result.processes.first
+        expect(ps.schedule_id).to eq(schedule.id)
+      end
     end
 
     context "with a running process (active instances)" do

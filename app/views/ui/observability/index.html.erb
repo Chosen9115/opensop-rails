@@ -189,9 +189,9 @@
                             data: { confirm: t('opensop.common.confirm') } %>
 
               <%# Schedule toggle — only when a schedule exists %>
-              <% if ps.cron_expression.present? %>
+              <% if ps.cron_expression.present? && ps.schedule_id.present? %>
                 <%= button_to ps.schedule_enabled ? t('opensop.observability.actions.disable') : t('opensop.observability.actions.enable'),
-                              ui_observability_toggle_schedule_path(name: ps.name),
+                              ui_observability_toggle_schedule_path(name: ps.name, schedule_id: ps.schedule_id),
                               method: :patch,
                               class: "text-[11px] font-mono px-2 py-1 rounded-[3px] border border-border bg-bg hover:bg-bg-hover transition-colors text-fg-muted" %>
               <% end %>

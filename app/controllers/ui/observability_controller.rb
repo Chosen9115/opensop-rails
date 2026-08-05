@@ -48,10 +48,12 @@ module Ui
                   alert: t("opensop.errors.invalid_inputs", message: e.message)
     end
 
-    # PATCH /observability/:name/schedule/toggle
-    # Enables or disables the schedule for the named process.
+    # PATCH /observability/:name/schedule/:schedule_id/toggle
+    # Enables or disables a specific schedule for the named process.
+    # Addressed by schedule_id so that a process with multiple schedules always
+    # toggles the one shown in the UI — not an arbitrary row.
     def toggle_schedule
-      schedule = Sop::Schedule.find_by!(process_name: params[:name])
+      schedule = Sop::Schedule.find(params[:schedule_id])
       schedule.update!(enabled: !schedule.enabled?)
       flash_key = schedule.enabled? ? "opensop.observability.schedule_enabled" : "opensop.observability.schedule_disabled"
       redirect_to ui_observability_path, notice: t(flash_key, default: "Schedule updated.")

@@ -87,11 +87,14 @@ scope module: :ui, as: :ui do
   get "/schedule", to: "schedules#index", as: :schedule
 
   # Observability terminal — per-process status, run-now, schedule toggles.
+  # `:name` uses the same constraint as the processes routes so dotted names
+  # (e.g. "finance.invoice") are accepted.
   get  "/observability",                    to: "observability#index",           as: :observability
   post "/observability/:name/run",          to: "observability#run_now",         as: :observability_run_now,
-       constraints: { name: /[a-z0-9][a-z0-9_-]*/ }
-  patch "/observability/:name/schedule/toggle", to: "observability#toggle_schedule", as: :observability_toggle_schedule,
-        constraints: { name: /[a-z0-9][a-z0-9_-]*/ }
+       constraints: { name: /[a-z0-9][a-z0-9_-]*(\.[a-z0-9][a-z0-9_-]*)*/ }
+  patch "/observability/:name/schedule/:schedule_id/toggle", to: "observability#toggle_schedule", as: :observability_toggle_schedule,
+        constraints: { name: /[a-z0-9][a-z0-9_-]*(\.[a-z0-9][a-z0-9_-]*)*/,
+                        schedule_id: /[0-9a-f-]{36}/ }
 
   # Account / admin self-service. Three sibling pages: passkeys, users
   # (admins), and active sessions. All gated by the existing

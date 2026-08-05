@@ -27,13 +27,15 @@ module Opensop
       :name,
       :version,
       :description,
-      :status,       # "open" | "scheduled" | "running"
-      :last_status,  # "ok" | "error" | "never"
-      :last_run_at,  # Time or nil
-      :next_run_at,  # Time or nil
+      :status,          # "open" | "scheduled" | "running"
+      :last_status,     # "ok" | "error" | "never"
+      :last_run_at,     # Time or nil
+      :next_run_at,     # Time or nil (non-null only when status="scheduled")
       :active_instances,
       :cron_expression,
       :schedule_enabled,
+      :schedule_id,     # UUID of the schedule row, or nil — used by the UI to
+                        # address the toggle action unambiguously
       keyword_init: true
     )
 
@@ -64,10 +66,11 @@ module Opensop
           status: status,
           last_status: last_status,
           last_run_at: last_instance&.dig(:completed_at) || last_instance&.dig(:updated_at),
-          next_run_at: schedule&.next_run_at,
+          next_run_at: schedule&.enabled? ? schedule.next_run_at : nil,
           active_instances: in_flight,
           cron_expression: schedule&.cron_expression,
-          schedule_enabled: schedule&.enabled?
+          schedule_enabled: schedule&.enabled?,
+          schedule_id: schedule&.id
         )
       end
 
@@ -132,15 +135,15 @@ module Opensop
 
     # Returns a Hash { process_name => {state:, completed_at:, updated_at:} }
     # using the most recently updated terminal (completed/failed/cancelled)
-    # instance per process.
+    # instance per process. Uses DISTINCT ON to pull exactly one row per
+    # process_name in SQL, avoiding an unbounded Ruby-side dedup.
     def safe_load_last_instance_by_process
-      Sop::Instance
+      rows = Sop::Instance
         .where(state: %w[completed failed cancelled])
-        .order(updated_at: :desc)
-        .pluck(:process_name, :state, :completed_at, :updated_at)
-        .each_with_object({}) do |(name, state, completed_at, updated_at), h|
-          h[name] ||= { state: state, completed_at: completed_at, updated_at: updated_at }
-        end
+        .select("DISTINCT ON (process_name) process_name, state, completed_at, updated_at")
+        .order("process_name, updated_at DESC")
+        .map { |r| [r.process_name, { state: r.state, completed_at: r.completed_at, updated_at: r.updated_at }] }
+      rows.to_h
     rescue ActiveRecord::StatementInvalid
       {}
     end
