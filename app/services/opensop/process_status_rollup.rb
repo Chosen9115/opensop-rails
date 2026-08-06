@@ -16,6 +16,13 @@ module Opensop
   #   scheduled — has an enabled Sop::Schedule row (regardless of active instances)
   #   open      — neither of the above
   #
+  # SPEC v0.7 §9.3 — last_status vs last_run_at semantics:
+  #   last_status  derived from the most recent run whose state is completed
+  #                (→ ok) or failed (→ error); cancelled/interrupted runs are
+  #                skipped entirely. If no completed/failed run exists → "never".
+  #   last_run_at  most recent started_at across ALL runs regardless of outcome;
+  #                a cancelled run CAN be the most recent last_run_at.
+  #
   # The whole call is defensively wrapped: if any table is missing (unmigrated
   # environment) we substitute safe zero/nil values rather than raising, matching
   # the posture of MetricsRollup and ScheduleDispatcher.
@@ -46,16 +53,18 @@ module Opensop
       processes = safe_load_processes
       return Result.new(processes: []) if processes.empty?
 
-      schedules_by_process = safe_load_schedules_by_process
-      in_flight_by_process = safe_load_in_flight_by_process
-      last_instance_by_process = safe_load_last_instance_by_process
+      process_names = processes.map(&:name)
+      schedules_by_process  = safe_load_schedules_by_process
+      in_flight_by_process  = safe_load_in_flight_by_process
+      last_status_by_process = safe_load_last_status_by_process(process_names)
+      last_run_at_by_process = safe_load_last_run_at_by_process(process_names)
 
       statuses = processes.map do |process|
-        schedule = schedules_by_process[process.name]
-        in_flight = in_flight_by_process[process.name].to_i
-        last_instance = last_instance_by_process[process.name]
+        schedule      = schedules_by_process[process.name]
+        in_flight     = in_flight_by_process[process.name].to_i
+        last_instance = last_status_by_process[process.name]
 
-        state = derive_status(in_flight, schedule)
+        state       = derive_status(in_flight, schedule)
         last_status = derive_last_status(last_instance)
 
         ProcessStatus.new(
@@ -64,7 +73,7 @@ module Opensop
           description: process.description,
           state: state,
           last_status: last_status,
-          last_run_at: last_instance&.dig(:completed_at) || last_instance&.dig(:updated_at),
+          last_run_at: last_run_at_by_process[process.name],
           next_run_at: schedule&.enabled? ? schedule.next_run_at : nil,
           active_instances: in_flight,
           cron_expression: schedule&.cron_expression,
@@ -86,14 +95,15 @@ module Opensop
       "open"
     end
 
-    # "ok" if last terminal instance was completed; "error" if failed or
-    # cancelled; "never" if no terminal instances exist.
+    # "ok" if the most recent completed/failed run completed; "error" if it
+    # failed. "never" if no completed/failed run exists (cancelled/interrupted
+    # runs are skipped per SPEC v0.7 §9.3).
     def derive_last_status(last_instance)
       return "never" if last_instance.nil?
 
       case last_instance[:state]
       when "completed" then "ok"
-      when "failed", "cancelled" then "error"
+      when "failed"    then "error"
       else "never"
       end
     end
@@ -132,17 +142,51 @@ module Opensop
       {}
     end
 
-    # Returns a Hash { process_name => {state:, completed_at:, updated_at:} }
-    # using the most recently updated terminal (completed/failed/cancelled)
-    # instance per process. Uses DISTINCT ON to pull exactly one row per
-    # process_name in SQL, avoiding an unbounded Ruby-side dedup.
-    def safe_load_last_instance_by_process
-      rows = Sop::Instance
-        .where(state: %w[completed failed cancelled])
-        .select("DISTINCT ON (process_name) process_name, state, completed_at, updated_at")
-        .order("process_name, updated_at DESC")
-        .map { |r| [r.process_name, { state: r.state, completed_at: r.completed_at, updated_at: r.updated_at }] }
-      rows.to_h
+    # Returns a Hash { process_name => {state:, started_at:} } for the most
+    # recent completed/failed instance per process, bounded to the given set of
+    # process_names. cancelled/interrupted runs are excluded per SPEC v0.7 §9.3.
+    #
+    # Bounded lookup: for each known process_name we issue a per-name subquery
+    # (ORDER BY started_at DESC LIMIT 1). This is O(|process_names|) index
+    # probes rather than a full scan of the terminal-history table, so work
+    # does NOT grow with total historical rows for processes not being queried.
+    # The index index_sop_instances_status_by_process_started covers
+    # (process_name, started_at DESC) WHERE state IN ('completed','failed').
+    def safe_load_last_status_by_process(process_names)
+      return {} if process_names.empty?
+
+      result = {}
+      process_names.each do |name|
+        row = Sop::Instance
+          .where(process_name: name, state: %w[completed failed])
+          .order(started_at: :desc)
+          .select(:process_name, :state, :started_at)
+          .first
+        result[name] = { state: row.state, started_at: row.started_at } if row
+      end
+      result
+    rescue ActiveRecord::StatementInvalid
+      {}
+    end
+
+    # Returns a Hash { process_name => started_at } for the most recent run
+    # across ALL states (including cancelled/interrupted) per SPEC v0.7 §9.3.
+    # Uses the existing index_sop_instances_on_started_at and a per-name
+    # bounded lookup.
+    def safe_load_last_run_at_by_process(process_names)
+      return {} if process_names.empty?
+
+      result = {}
+      process_names.each do |name|
+        row = Sop::Instance
+          .where(process_name: name)
+          .where.not(started_at: nil)
+          .order(started_at: :desc)
+          .select(:process_name, :started_at)
+          .first
+        result[name] = row.started_at if row
+      end
+      result
     rescue ActiveRecord::StatementInvalid
       {}
     end

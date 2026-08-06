@@ -148,7 +148,7 @@ RSpec.describe Opensop::ProcessStatusRollup do
       context "when last terminal instance completed successfully" do
         before do
           create(:sop_instance, :completed, process: process, process_name: "worker", process_version: "1.0",
-                 updated_at: 1.hour.ago)
+                 started_at: 1.hour.ago, updated_at: 1.hour.ago)
         end
 
         it "returns last_status=ok" do
@@ -160,7 +160,7 @@ RSpec.describe Opensop::ProcessStatusRollup do
       context "when last terminal instance failed" do
         before do
           create(:sop_instance, :failed, process: process, process_name: "worker", process_version: "1.0",
-                 updated_at: 30.minutes.ago)
+                 started_at: 30.minutes.ago, updated_at: 30.minutes.ago)
         end
 
         it "returns last_status=error" do
@@ -173,14 +173,53 @@ RSpec.describe Opensop::ProcessStatusRollup do
         before do
           # Failed more recently than completed.
           create(:sop_instance, :completed, process: process, process_name: "worker", process_version: "1.0",
-                 updated_at: 2.hours.ago)
+                 started_at: 2.hours.ago, updated_at: 2.hours.ago)
           create(:sop_instance, :failed, process: process, process_name: "worker", process_version: "1.0",
-                 updated_at: 30.minutes.ago)
+                 started_at: 30.minutes.ago, updated_at: 30.minutes.ago)
         end
 
         it "reports the most recent terminal state (error)" do
           ps = result.processes.first
           expect(ps.last_status).to eq("error")
+        end
+      end
+
+      # SPEC v0.7 §9.3 — cancelled runs must not affect last_status.
+      context "when a cancelled run is newer than the most recent completed run" do
+        before do
+          # completed 2 hours ago
+          create(:sop_instance, :completed, process: process, process_name: "worker", process_version: "1.0",
+                 started_at: 2.hours.ago, updated_at: 2.hours.ago)
+          # cancelled 5 minutes ago — must NOT override last_status
+          create(:sop_instance, :cancelled, process: process, process_name: "worker", process_version: "1.0",
+                 started_at: 5.minutes.ago, updated_at: 5.minutes.ago)
+        end
+
+        it "last_status stays ok (cancelled run is skipped per SPEC §9.3)" do
+          ps = result.processes.first
+          expect(ps.last_status).to eq("ok")
+        end
+
+        it "last_run_at reflects the cancelled run's started_at (most recent start)" do
+          ps = result.processes.first
+          expect(ps.last_run_at).to be_within(2.seconds).of(5.minutes.ago)
+        end
+      end
+
+      context "when the only run is cancelled (no completed/failed runs exist)" do
+        before do
+          create(:sop_instance, :cancelled, process: process, process_name: "worker", process_version: "1.0",
+                 started_at: 10.minutes.ago, updated_at: 10.minutes.ago)
+        end
+
+        it "returns last_status=never (no completed/failed run to derive from)" do
+          ps = result.processes.first
+          expect(ps.last_status).to eq("never")
+        end
+
+        it "still returns a last_run_at (the cancelled run's started_at)" do
+          ps = result.processes.first
+          expect(ps.last_run_at).to be_within(2.seconds).of(10.minutes.ago)
         end
       end
     end
