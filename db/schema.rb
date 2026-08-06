@@ -114,7 +114,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_05_000003) do
     t.datetime "updated_at", null: false
     t.index ["process_id"], name: "index_sop_instances_on_process_id"
     t.index ["process_name", "started_at"], name: "index_sop_instances_last_run_at_by_process", order: { started_at: :desc }, where: "(started_at IS NOT NULL)"
-    t.index ["process_name", "started_at"], name: "index_sop_instances_status_by_process_started", order: { started_at: :desc }, where: "((state)::text = ANY (ARRAY[('completed'::character varying)::text, ('failed'::character varying)::text]))"
+    t.index ["process_name", "started_at"], name: "index_sop_instances_status_by_process_started", order: { started_at: :desc }, where: "((state)::text = ANY ((ARRAY['completed'::character varying, 'failed'::character varying])::text[]))"
     t.index ["process_name", "state"], name: "index_sop_instances_on_process_name_and_state"
     t.index ["started_at"], name: "index_sop_instances_on_started_at"
     t.index ["state"], name: "index_sop_instances_on_state"
