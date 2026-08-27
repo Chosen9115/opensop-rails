@@ -1,3 +1,22 @@
+> ## Archived — not maintained
+>
+> This repository is no longer part of the OpenSOP project and receives no
+> updates. It is kept read-only for reference.
+>
+> **OpenSOP lives on:**
+>
+> - The standard and the local-first CLI: **https://github.com/opensop/opensop**
+> - The public SOP library: **https://github.com/opensop/sops**
+> - The site: **https://opensop.ai**
+>
+> OpenSOP is local-first. `opensop run` executes processes on your machine with
+> bash and jq — it never required this server.
+>
+> The `/sop/*` server profile is still specified in
+> [`SPEC.md` §4](https://github.com/opensop/opensop/blob/main/SPEC.md); there is
+> simply no maintained implementation of it. Anyone is free to build one, and
+> this code remains here as a starting point.
+
 # opensop-rails — OpenSOP reference server
 
 A Rails implementation of the **[OpenSOP](https://github.com/Chosen9115/opensop) specification**: it serves the `/sop/*` REST API, executes processes, stores instance state, and owns a shared audit log. Humans and agents drive it through the same `opensop` CLI (`opensop --remote …`) or any client that speaks the spec.
